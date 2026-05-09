@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     // Discord Webhook URL - IMPORTANT: In a real production app, this should be sent from a backend server, not directly from frontend.
-    const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1481703762274947106/Bda8WkM_WQyKA9_RbJBwjDoqBrl-fxxB4zYyJqApA5c1NLVQv6jc3q8yCuIqZc-afe_Y';
+    const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1502765114812796968/jR9IUjxMFiYPMuS-HdwHCWDO0cs94kIsYQI_-eg_EmP85AWZTMwT_B8NuxEqzDilnL8p';
 
     // --- Discount Functions - تعمل على إجمالي السلة ككل ---
     const PRODUCT_SINGLE_PRICE = 3600;

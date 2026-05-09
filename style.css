@@ -2059,3 +2059,24 @@ button:hover {
     outline: 2px solid var(--primary-color);
     outline-offset: 2px;
 }
+
+/* --- New Color Buttons --- */
+.color-btn[data-color="darkgreen"] {
+    background-color: #092a2e;
+    color: var(--white);
+    border-color: #092a2e;
+}
+.color-btn[data-color="darkgreen"].active {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+.color-btn[data-color="sugarwhite"] {
+    background-color: #fcfcfa;
+    color: #333333;
+    border-color: #fcfcfa;
+}
+.color-btn[data-color="sugarwhite"].active {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}

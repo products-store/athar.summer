@@ -30,12 +30,12 @@ const productDetails = {
         },
         'lead': {
             name: 'رصاصي',
-            main: 'images/lead1.webp',
+            main: 'images/lead4.webp',
             thumbnails: [
-                'images/lead1.webp',
+                'images/lead4.webp',
                 'images/lead2.webp',
                 'images/lead3.webp',
-                'images/lead4.webp'
+                'images/lead1.webp'
             ],
             availableSizes: ['52', '54', '56', '58']
         },

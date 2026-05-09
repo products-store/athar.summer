@@ -137,7 +137,30 @@ const productDetails = {
                 'images/darkgray4.webp'
             ],
             availableSizes: ['52', '54', '56', '58']
-        }
+        },
+        // داخل productDetails.colors أضف:
+'darkgreen': {
+    name: 'اخضر داكن',
+    main: 'images/darkgreen1.webp',
+    thumbnails: [
+        'images/darkgreen1.webp',
+        'images/darkgreen2.webp',
+        'images/darkgreen3.webp',
+        'images/darkgreen4.webp'
+    ],
+    availableSizes: ['52', '54', '56', '58']
+},
+'sugarwhite': {
+    name: 'ابيض سكري',
+    main: 'images/sugarwhite1.webp',
+    thumbnails: [
+        'images/sugarwhite1.webp',
+        'images/sugarwhite2.webp',
+        'images/sugarwhite3.webp',
+        'images/sugarwhite4.webp'
+    ],
+    availableSizes: ['52', '54', '56', '58']
+}
     }
 };
 

@@ -136,37 +136,66 @@ document.addEventListener('DOMContentLoaded', () => {
         updateOrderTotals();
     };
 
-    // --- دالة إرسال الطلب إلى ZR Express ---
-    async function sendOrderToZR(order) {
-        try {
-            const orderData = {
-                shippingInfo: order.shippingInfo,
-                items: order.items.map(item => ({
-                    name: item.name,
-                    color: item.color,
-                    size: item.size,
-                    quantity: item.quantity,
-                    price: item.price
-                })),
-                productsTotal: order.productsTotal,
-                deliveryCost: order.deliveryCost,
-                totalAmount: order.totalAmount
-            };
+// في قسم معالجة نتيجة ZR Express في info.js
 
-            const result = await createZRWaybill(orderData);
-            
-            if (result.success) {
-                console.log('✅ تم إنشاء بوليصة الشحن بنجاح:', result);
-                return { success: true, trackingNumber: result.trackingNumber };
-            } else {
-                console.error('❌ فشل إنشاء بوليصة الشحن:', result.error);
-                return { success: false, error: result.error };
-            }
-        } catch (error) {
-            console.error('❌ خطأ أثناء إرسال الطلب إلى ZR Express:', error);
-            return { success: false, error: error.message };
-        }
+if (zrResult.success) {
+    // ✅ نجاح إنشاء بوليصة الشحن
+    console.log('✅ بوليصة الشحن تم إنشاؤها:', zrResult.trackingNumber);
+    
+    // حفظ الطلب مع رقم التتبع
+    let allOrders = JSON.parse(localStorage.getItem('qudwahOrders')) || [];
+    allOrders.push({
+        ...order,
+        zrTrackingNumber: zrResult.trackingNumber,
+        zrStatus: 'Created',
+        zrWaybillUrl: zrResult.waybillUrl || '',
+        zrData: zrResult.data || {}
+    });
+    localStorage.setItem('qudwahOrders', JSON.stringify(allOrders));
+
+    // مسح السلة
+    localStorage.removeItem('qudwahCart');
+    cart = [];
+    updateGlobalCartCount();
+
+    // عرض رسالة نجاح مع رقم التتبع
+    const trackingMsg = zrResult.waybillUrl 
+        ? `رقم تتبع الشحن: ${zrResult.trackingNumber}\nرابط البوليصة: ${zrResult.waybillUrl}`
+        : `رقم تتبع الشحن: ${zrResult.trackingNumber}`;
+    
+    alert(`✅ تم إنشاء طلبك بنجاح!\n${trackingMsg}\nسنقوم بالاتصال بك لتأكيد الطلب.`);
+
+    // إرسال حدث Meta Pixel
+    if (typeof fbq !== 'undefined') {
+        fbq('track', 'Purchase', {
+            value: order.totalAmount,
+            currency: 'DZD',
+            contents: order.items.map(item => ({
+                id: item.id,
+                quantity: item.quantity,
+                item_price: item.price
+            }))
+        });
     }
+
+    // توجيه العميل إلى الصفحة الرئيسية
+    window.location.href = 'index.html';
+} else {
+    // ❌ فشل إنشاء بوليصة الشحن
+    console.error('❌ فشل إنشاء بوليصة الشحن:', zrResult.error);
+    
+    // ✅ عرض رسالة خطأ واضحة مع خيار المحاولة مرة أخرى
+    const tryAgain = confirm(
+        `❌ عذراً، حدث خطأ أثناء إنشاء بوليصة الشحن:\n${zrResult.error}\n\n` +
+        `هل تريد المحاولة مرة أخرى؟\n` +
+        `(إذا استمرت المشكلة، يرجى الاتصال بالدعم)`
+    );
+    
+    if (tryAgain) {
+        // يمكن للمستخدم المحاولة مرة أخرى
+        // يمكن إعادة تشغيل العملية أو البقاء في الصفحة
+    }
+}
 
     // --- Event Listeners and Initial Setup ---
 

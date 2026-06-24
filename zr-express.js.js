@@ -2,8 +2,8 @@
 
 // تكوين API - سيتم إدخال القيم يدوياً
 const ZR_CONFIG = {
-    secretKey: 'YOUR_SECRET_KEY_HERE', // ضع الـ secretKey الخاص بك هنا
-    tenantId: 'YOUR_TENANT_ID_HERE',   // ضع الـ tenantId الخاص بك هنا
+    secretKey: 'aJE7CMeR061R2WTC6yi8sNZUr2OJDG8NazHJF13sAsxqBagL21QYn6d6AXZHZxGf', // ضع الـ secretKey الخاص بك هنا
+    tenantId: '106672a4-5f7f-4e6c-acd9-59e37e5aaaf3',   // ضع الـ tenantId الخاص بك هنا
     baseUrl: 'https://api.zrexpress.app'
 };
 

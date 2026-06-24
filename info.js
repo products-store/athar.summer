@@ -142,39 +142,82 @@ document.addEventListener('DOMContentLoaded', () => {
         orderGrandTotalElement.textContent = `${currentTotal.toLocaleString('ar-DZ')} د.ج`;
     };
 
-    // --- دالة إرسال الطلب إلى ZR Express ---
-    async function sendOrderToZR(order) {
-        try {
-            // بناء بيانات الطلب لإرسالها إلى ZR Express
-            const orderData = {
-                shippingInfo: order.shippingInfo,
-                items: order.items.map(item => ({
-                    name: item.name,
-                    color: item.color,
-                    size: item.size,
-                    quantity: item.quantity,
-                    price: item.price
-                })),
-                productsTotal: order.productsTotal,
-                deliveryCost: order.deliveryCost,
-                totalAmount: order.totalAmount
-            };
+// الجزء المتعلق بـ ZR Express في info.js
 
-            // استدعاء الدالة من ملف zr-express.js
-            const result = await createZRWaybill(orderData);
-            
-            if (result.success) {
-                console.log('✅ تم إنشاء بوليصة الشحن بنجاح:', result);
-                return { success: true, trackingNumber: result.trackingNumber };
-            } else {
-                console.error('❌ فشل إنشاء بوليصة الشحن:', result.error);
-                return { success: false, error: result.error };
-            }
-        } catch (error) {
-            console.error('❌ خطأ أثناء إرسال الطلب إلى ZR Express:', error);
-            return { success: false, error: error.message };
+// --- دالة إرسال الطلب إلى ZR Express (محسنة) ---
+async function sendOrderToZR(order) {
+    // عرض مؤشر تحميل (اختياري)
+    const submitBtn = document.querySelector('.submit-order-btn');
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = 'جاري إنشاء بوليصة الشحن...';
+    submitBtn.disabled = true;
+
+    try {
+        // التأكد من صحة بيانات الطلب قبل الإرسال
+        if (!order.shippingInfo || !order.items || order.items.length === 0) {
+            throw new Error('بيانات الطلب غير مكتملة');
         }
+
+        // بناء بيانات الطلب لإرسالها إلى ZR Express
+        const orderData = {
+            id: order.id,
+            date: order.date,
+            shippingInfo: {
+                fullName: order.shippingInfo.fullName,
+                phone: order.shippingInfo.phone,
+                alternativePhone: order.shippingInfo.alternativePhone || '',
+                wilaya: order.shippingInfo.wilaya,
+                commune: order.shippingInfo.commune || '',
+                deliveryMethod: order.shippingInfo.deliveryMethod,
+                paymentMethod: 'cashOnDelivery',
+                addressDetails: order.shippingInfo.addressDetails || ''
+            },
+            items: order.items.map(item => ({
+                id: item.id || `${item.color}-${item.size}`,
+                name: item.name,
+                color: item.color,
+                size: item.size,
+                quantity: parseInt(item.quantity) || 1,
+                price: parseFloat(item.price) || 0,
+                description: item.description || ''
+            })),
+            productsTotal: parseFloat(order.productsTotal) || 0,
+            deliveryCost: parseFloat(order.deliveryCost) || 0,
+            totalAmount: parseFloat(order.totalAmount) || 0,
+            notes: order.notes || ''
+        };
+
+        // ✅ التحقق من صحة البيانات قبل الإرسال
+        console.log('📦 التحقق من بيانات الطلب:', orderData);
+        
+        // استدعاء الدالة من ملف zr-express.js
+        const result = await createZRWaybill(orderData);
+        
+        // استعادة الزر
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+
+        if (result.success) {
+            console.log('✅ تم إنشاء بوليصة الشحن بنجاح:', result);
+            return { 
+                success: true, 
+                trackingNumber: result.trackingNumber,
+                waybillUrl: result.waybillUrl,
+                data: result.data
+            };
+        } else {
+            console.error('❌ فشل إنشاء بوليصة الشحن:', result.error);
+            return { success: false, error: result.error };
+        }
+    } catch (error) {
+        // استعادة الزر في حالة الخطأ
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+        
+        console.error('❌ خطأ أثناء إرسال الطلب إلى ZR Express:', error);
+        return { success: false, error: error.message };
     }
+}
 
     // --- Event Listeners and Initial Setup ---
 
@@ -263,41 +306,67 @@ document.addEventListener('DOMContentLoaded', () => {
         // ⭐ إرسال الطلب إلى ZR Express
         const zrResult = await sendOrderToZR(order);
 
-        if (zrResult.success) {
-            // حفظ الطلب في localStorage
-            let allOrders = JSON.parse(localStorage.getItem('qudwahOrders')) || [];
-            allOrders.push({
-                ...order,
-                zrTrackingNumber: zrResult.trackingNumber,
-                zrStatus: 'Created'
-            });
-            localStorage.setItem('qudwahOrders', JSON.stringify(allOrders));
+// في قسم معالجة نتيجة ZR Express في info.js
 
-            // مسح السلة
-            localStorage.removeItem('qudwahCart');
-            cart = [];
-            updateGlobalCartCount();
+if (zrResult.success) {
+    // ✅ نجاح إنشاء بوليصة الشحن
+    console.log('✅ بوليصة الشحن تم إنشاؤها:', zrResult.trackingNumber);
+    
+    // حفظ الطلب مع رقم التتبع
+    let allOrders = JSON.parse(localStorage.getItem('qudwahOrders')) || [];
+    allOrders.push({
+        ...order,
+        zrTrackingNumber: zrResult.trackingNumber,
+        zrStatus: 'Created',
+        zrWaybillUrl: zrResult.waybillUrl || '',
+        zrData: zrResult.data || {}
+    });
+    localStorage.setItem('qudwahOrders', JSON.stringify(allOrders));
 
-            // عرض رسالة نجاح مع رقم التتبع
-            alert(`✅ تم إنشاء طلبك بنجاح!\nرقم تتبع الشحن: ${zrResult.trackingNumber}\nسنقوم بالاتصال بك لتأكيد الطلب.`);
+    // مسح السلة
+    localStorage.removeItem('qudwahCart');
+    cart = [];
+    updateGlobalCartCount();
 
-            // إرسال حدث Meta Pixel
-            fbq('track', 'Purchase', {
-                value: order.totalAmount,
-                currency: 'DZD',
-                contents: order.items.map(item => ({
-                    id: item.id,
-                    quantity: item.quantity,
-                    item_price: item.price
-                }))
-            });
+    // عرض رسالة نجاح مع رقم التتبع
+    const trackingMsg = zrResult.waybillUrl 
+        ? `رقم تتبع الشحن: ${zrResult.trackingNumber}\nرابط البوليصة: ${zrResult.waybillUrl}`
+        : `رقم تتبع الشحن: ${zrResult.trackingNumber}`;
+    
+    alert(`✅ تم إنشاء طلبك بنجاح!\n${trackingMsg}\nسنقوم بالاتصال بك لتأكيد الطلب.`);
 
-            // توجيه العميل إلى الصفحة الرئيسية
-            window.location.href = 'index.html';
-        } else {
-            // في حالة فشل الاتصال بـ ZR Express
-            alert(`❌ عذراً، حدث خطأ أثناء إنشاء بوليصة الشحن: ${zrResult.error}\nالرجاء المحاولة مرة أخرى أو الاتصال بالدعم.`);
-        }
+    // إرسال حدث Meta Pixel
+    if (typeof fbq !== 'undefined') {
+        fbq('track', 'Purchase', {
+            value: order.totalAmount,
+            currency: 'DZD',
+            contents: order.items.map(item => ({
+                id: item.id,
+                quantity: item.quantity,
+                item_price: item.price
+            }))
+        });
+    }
+
+    // توجيه العميل إلى الصفحة الرئيسية
+    window.location.href = 'index.html';
+} else {
+    // ❌ فشل إنشاء بوليصة الشحن
+    console.error('❌ فشل إنشاء بوليصة الشحن:', zrResult.error);
+    
+    // ✅ عرض رسالة خطأ واضحة مع خيار المحاولة مرة أخرى
+    const tryAgain = confirm(
+        `❌ عذراً، حدث خطأ أثناء إنشاء بوليصة الشحن:\n${zrResult.error}\n\n` +
+        `هل تريد المحاولة مرة أخرى؟\n` +
+        `(إذا استمرت المشكلة، يرجى الاتصال بالدعم)`
+    );
+    
+    if (tryAgain) {
+        // يمكن للمستخدم المحاولة مرة أخرى
+        // يمكن إعادة تشغيل العملية أو البقاء في الصفحة
+    }
+}
+
     });
 
     // دالة تحديث عداد السلة في الهيدر

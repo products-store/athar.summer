@@ -142,83 +142,34 @@ document.addEventListener('DOMContentLoaded', () => {
         orderGrandTotalElement.textContent = `${currentTotal.toLocaleString('ar-DZ')} د.ج`;
     };
 
-// الجزء المتعلق بـ ZR Express في info.js
-
-// --- دالة إرسال الطلب إلى ZR Express (محسنة) ---
+// info.js - تحديث دالة sendOrderToZR
 async function sendOrderToZR(order) {
-    // عرض مؤشر تحميل (اختياري)
     const submitBtn = document.querySelector('.submit-order-btn');
     const originalText = submitBtn.textContent;
     submitBtn.textContent = 'جاري إنشاء بوليصة الشحن...';
     submitBtn.disabled = true;
 
     try {
-        // التأكد من صحة بيانات الطلب قبل الإرسال
+        // التحقق من بيانات الطلب
         if (!order.shippingInfo || !order.items || order.items.length === 0) {
             throw new Error('بيانات الطلب غير مكتملة');
         }
 
-        // بناء بيانات الطلب لإرسالها إلى ZR Express
-        const orderData = {
-            id: order.id,
-            date: order.date,
-            shippingInfo: {
-                fullName: order.shippingInfo.fullName,
-                phone: order.shippingInfo.phone,
-                alternativePhone: order.shippingInfo.alternativePhone || '',
-                wilaya: order.shippingInfo.wilaya,
-                commune: order.shippingInfo.commune || '',
-                deliveryMethod: order.shippingInfo.deliveryMethod,
-                paymentMethod: 'cashOnDelivery',
-                addressDetails: order.shippingInfo.addressDetails || ''
-            },
-            items: order.items.map(item => ({
-                id: item.id || `${item.color}-${item.size}`,
-                name: item.name,
-                color: item.color,
-                size: item.size,
-                quantity: parseInt(item.quantity) || 1,
-                price: parseFloat(item.price) || 0,
-                description: item.description || ''
-            })),
-            productsTotal: parseFloat(order.productsTotal) || 0,
-            deliveryCost: parseFloat(order.deliveryCost) || 0,
-            totalAmount: parseFloat(order.totalAmount) || 0,
-            notes: order.notes || ''
-        };
-
-        // ✅ التحقق من صحة البيانات قبل الإرسال
-        console.log('📦 التحقق من بيانات الطلب:', orderData);
-        
         // استدعاء الدالة من ملف zr-express.js
-        const result = await createZRWaybill(orderData);
+        const result = await createZRWaybill(order);
         
         // استعادة الزر
         submitBtn.textContent = originalText;
         submitBtn.disabled = false;
 
-        if (result.success) {
-            console.log('✅ تم إنشاء بوليصة الشحن بنجاح:', result);
-            return { 
-                success: true, 
-                trackingNumber: result.trackingNumber,
-                waybillUrl: result.waybillUrl,
-                data: result.data
-            };
-        } else {
-            console.error('❌ فشل إنشاء بوليصة الشحن:', result.error);
-            return { success: false, error: result.error };
-        }
+        return result;
     } catch (error) {
-        // استعادة الزر في حالة الخطأ
         submitBtn.textContent = originalText;
         submitBtn.disabled = false;
-        
-        console.error('❌ خطأ أثناء إرسال الطلب إلى ZR Express:', error);
+        console.error('❌ خطأ:', error);
         return { success: false, error: error.message };
     }
 }
-
     // --- Event Listeners and Initial Setup ---
 
     populateWilayas();
